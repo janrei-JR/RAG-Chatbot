@@ -1,0 +1,377 @@
+# RAG Industrial - Logging-Konfiguration
+# Service-orientierte Architektur v5.0.0
+# Strukturiertes JSON-Logging mit Performance-Monitoring
+
+# =============================================================================
+# LOGGING LEVEL KONFIGURATION
+# =============================================================================
+logging:
+  # Globales Log-Level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  level: "INFO"
+  
+  # Umgebungs-spezifische Level-Überschreibungen
+  levels:
+    development: "DEBUG"
+    staging: "INFO"  
+    production: "WARNING"
+    testing: "ERROR"
+
+# =============================================================================
+# HANDLER-KONFIGURATION
+# =============================================================================
+handlers:
+  # Konsolen-Ausgabe mit Farb-Formatierung
+  console:
+    enabled: true
+    level: "INFO"
+    format: "colored"  # colored, json, simple
+    show_timestamp: true
+    show_module: true
+    show_thread: false
+    
+    # Farb-Schema für verschiedene Log-Level
+    colors:
+      DEBUG: "cyan"
+      INFO: "green"
+      WARNING: "yellow"
+      ERROR: "red"
+      CRITICAL: "magenta"
+
+  # Datei-Handler für strukturierte Logs
+  file:
+    enabled: true
+    level: "DEBUG"
+    format: "json"  # json, structured, simple
+    
+    # Datei-Pfade und Rotation
+    base_path: "./logs"
+    filename_pattern: "rag_industrial_{date}.log"
+    max_file_size_mb: 50
+    backup_count: 10
+    
+    # Separate Dateien für verschiedene Komponenten
+    separate_files:
+      core: "core_{date}.log"
+      services: "services_{date}.log"
+      modules: "modules_{date}.log"
+      interfaces: "ui_{date}.log"
+      controllers: "controllers_{date}.log"
+
+  # Async File Handler für High-Performance Logging
+  async_file:
+    enabled: true
+    level: "INFO"
+    buffer_size: 1000
+    flush_interval_seconds: 5
+    queue_size: 10000
+    
+  # Error-Handler für kritische Fehler
+  error_file:
+    enabled: true
+    level: "ERROR"
+    filename: "errors_{date}.log"
+    include_stack_trace: true
+    max_file_size_mb: 100
+
+# =============================================================================
+# LOGGER-SPEZIFISCHE KONFIGURATIONEN
+# =============================================================================
+loggers:
+  # Core-System Logger
+  core:
+    level: "DEBUG"
+    handlers: ["console", "file"]
+    propagate: false
+    
+    # Core-Komponenten
+    config: 
+      level: "INFO"
+      include_sensitive_data: false
+    logger:
+      level: "WARNING"  # Vermeidet Log-Rekursion
+    exceptions:
+      level: "ERROR"
+      include_context: true
+    container:
+      level: "INFO"
+      track_dependencies: true
+
+  # Services Logger
+  services:
+    level: "INFO"
+    handlers: ["console", "file", "async_file"]
+    propagate: false
+    
+    # Service-spezifische Konfigurationen
+    document_service:
+      level: "INFO"
+      log_processing_stats: true
+    embedding_service:
+      level: "INFO" 
+      log_cache_stats: true
+    chat_service:
+      level: "INFO"
+      log_response_times: true
+    session_service:
+      level: "DEBUG"
+      log_session_events: true
+
+  # Module Logger
+  modules:
+    level: "INFO"
+    handlers: ["console", "file"]
+    propagate: false
+    
+    # Modul-spezifische Einstellungen
+    embeddings:
+      level: "INFO"
+      log_performance: true
+      log_cache_hits: true
+    vector_stores:
+      level: "INFO"
+      log_queries: false  # Datenschutz
+    loaders:
+      level: "INFO"
+      log_file_processing: true
+    processors:
+      level: "INFO"
+      log_text_analysis: false  # Kann sehr verbose sein
+
+  # Interface Logger
+  interfaces:
+    level: "INFO"
+    handlers: ["console", "file"]
+    propagate: false
+    
+    streamlit_ui:
+      level: "INFO"
+      log_user_interactions: false  # Datenschutz
+      log_session_state: true
+      log_errors_only: false
+
+  # Controller Logger
+  controllers:
+    level: "INFO"
+    handlers: ["console", "file"]
+    propagate: false
+    
+    pipeline_controller:
+      level: "INFO"
+      log_pipeline_stages: true
+    health_controller:
+      level: "WARNING"  # Nur bei Problemen
+      log_health_checks: false
+
+# =============================================================================
+# PERFORMANCE-MONITORING
+# =============================================================================
+performance:
+  enabled: true
+  log_slow_operations: true
+  slow_threshold_seconds: 1.0
+  
+  # Komponenten-spezifische Thresholds
+  thresholds:
+    embedding_generation: 2.0
+    document_processing: 5.0
+    vector_search: 1.0
+    llm_response: 10.0
+    
+  # Memory und Resource Tracking
+  resource_tracking:
+    enabled: true
+    log_interval_seconds: 60
+    include_memory_usage: true
+    include_cpu_usage: true
+
+# =============================================================================
+# SECURITY UND PRIVACY
+# =============================================================================
+security:
+  # Sensitive Daten ausblenden
+  mask_sensitive_data: true
+  sensitive_patterns:
+    - "password"
+    - "token" 
+    - "key"
+    - "secret"
+    - "api_key"
+  
+  # User-Daten Anonymisierung
+  anonymize_user_data: true
+  
+  # Log-Retention für DSGVO-Konformität
+  retention_days: 90
+  auto_cleanup: true
+
+# =============================================================================
+# STRUCTURED LOGGING SCHEMA
+# =============================================================================
+structured_logging:
+  enabled: true
+  format: "json"
+  
+  # Standard-Felder für alle Log-Entries
+  standard_fields:
+    timestamp: true
+    level: true
+    logger_name: true
+    module: true
+    function: true
+    line_number: true
+    thread_id: false
+    process_id: false
+    
+  # Context-Felder für RAG-spezifische Informationen
+  context_fields:
+    session_id: true
+    user_id: false  # Datenschutz
+    request_id: true
+    operation_type: true
+    component: true
+    
+  # Performance-Felder
+  performance_fields:
+    duration_ms: true
+    memory_usage_mb: false
+    cpu_percent: false
+
+# =============================================================================
+# DEVELOPMENT UND DEBUG
+# =============================================================================
+development:
+  # Erweiterte Debug-Informationen
+  debug_mode: true
+  verbose_errors: true
+  include_stack_traces: true
+  
+  # Development-spezifische Handler
+  debug_console:
+    enabled: true
+    level: "DEBUG"
+    colored_output: true
+    
+  # Code-Tracing für Performance-Analyse
+  code_tracing:
+    enabled: false  # Nur bei Bedarf aktivieren
+    trace_all_functions: false
+    trace_slow_functions: true
+
+# =============================================================================
+# PRODUCTION OPTIMIERUNGEN
+# =============================================================================
+production:
+  # Optimierte Performance für Production
+  async_logging: true
+  buffer_logs: true
+  compress_old_logs: true
+  
+  # Reduzierte Verbosity
+  minimal_console_output: true
+  error_only_console: false
+  
+  # Monitoring Integration
+  export_metrics: true
+  metrics_format: "prometheus"
+  
+  # Log-Aggregation vorbereiten
+  structured_only: true
+  json_formatting: true
+  include_metadata: true
+
+# =============================================================================
+# EXTERNAL INTEGRATIONS
+# =============================================================================
+integrations:
+  # Syslog für Unternehmens-Logging
+  syslog:
+    enabled: false
+    host: "localhost"
+    port: 514
+    facility: "local0"
+    
+  # ELK Stack (Elasticsearch, Logstash, Kibana)
+  elasticsearch:
+    enabled: false
+    host: "localhost"
+    port: 9200
+    index_pattern: "rag-industrial-{date}"
+    
+  # Grafana Loki
+  loki:
+    enabled: false
+    url: "http://localhost:3100"
+    labels:
+      application: "rag-industrial"
+      environment: "${ENVIRONMENT:-development}"
+
+# =============================================================================
+# FILTER UND TRANSFORMATIONEN
+# =============================================================================
+filters:
+  # Noise-Reduction - Häufige, unwichtige Meldungen filtern
+  noise_reduction:
+    enabled: true
+    suppress_repeated: true
+    max_repeats: 5
+    time_window_minutes: 10
+    
+  # Rate-Limiting für Log-Flooding
+  rate_limiting:
+    enabled: true
+    max_logs_per_second: 100
+    burst_size: 200
+    
+  # Content-Filter
+  content_filters:
+    - pattern: "heartbeat"
+      action: "suppress"
+      except_levels: ["ERROR", "CRITICAL"]
+    - pattern: "health_check"
+      action: "reduce_frequency"
+      interval_seconds: 60
+
+# =============================================================================
+# ALERTING
+# =============================================================================
+alerting:
+  enabled: true
+  
+  # Alert-Regeln
+  rules:
+    - name: "high_error_rate"
+      condition: "error_count > 10 in 5 minutes"
+      action: "email"
+      
+    - name: "slow_operations"
+      condition: "avg_response_time > 5 seconds"
+      action: "log_warning"
+      
+    - name: "service_unavailable" 
+      condition: "critical_error"
+      action: "immediate_alert"
+
+# =============================================================================
+# COMPLIANCE UND AUDIT
+# =============================================================================
+compliance:
+  # Audit-Trail für kritische Operationen
+  audit_trail:
+    enabled: true
+    operations:
+      - "user_login"
+      - "document_upload"
+      - "configuration_change"
+      - "service_restart"
+      
+  # Tamper-Evident Logging
+  integrity_protection:
+    enabled: false  # Für High-Security Umgebungen
+    hash_algorithm: "sha256"
+    sign_logs: false
+    
+  # Compliance-Standards
+  standards:
+    iso27001: false
+    gdpr: true
+    sox: false

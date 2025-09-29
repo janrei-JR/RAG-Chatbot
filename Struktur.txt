@@ -1,0 +1,97 @@
+Auflistung der Ordnerpfade
+Volumeseriennummer : CA12-E45F
+C:.
+¦   env_example.sh
+¦   inahalt.txt
+¦   inhalt.txt
+¦   main.py
+¦   main_py_phase3.py
+¦   module_documentation.md
+¦   rag_main_service_oriented.py
+¦   requirements.txt
+¦   
++---config
+¦       app_config.yaml
+¦       logging_config.yaml
+¦       models_config.yaml
+¦       
++---controllers
+¦       health_controller.py
+¦       init.py
+¦       pipeline_controller.py
+¦       pipeline_controller_phase3.py
+¦       session_controller.py
+¦       
++---core
+¦       config.py
+¦       container.py
+¦       core_init.py
+¦       exceptions.py
+¦       init.py
+¦       logger.py
+¦       
++---examples
+¦       embedding_usage_example.py
+¦       
++---interfaces
+¦   +---api
+¦   +---streamlit_ui
+¦           admin_interface.py
+¦           chat_interface.py
+¦           components.py
+¦           document_interface.py
+¦           init.py
+¦           main_interface.py
+¦           main_interface_phase3.py
+¦           
++---modules
+¦   +---embeddings
+¦   ¦       base_embeddings.py
+¦   ¦       init.py
+¦   ¦       ollama_embeddings.py
+¦   ¦       
+¦   +---llm
+¦   ¦       base_llm.py
+¦   ¦       init.py
+¦   ¦       ollama_llm.py
+¦   ¦       
+¦   +---loaders
+¦   ¦       base_loader.py
+¦   ¦       init.py
+¦   ¦       pdf_loader.py
+¦   ¦       
+¦   +---processors
+¦   ¦       content_classifier.py
+¦   ¦       init.py
+¦   ¦       metadata_enhancer.py
+¦   ¦       text_analyzer.py
+¦   ¦       text_splitter.py
+¦   ¦       
+¦   +---retrievers
+¦   ¦       base_retriever.py
+¦   ¦       hybrid_retriever.py
+¦   ¦       keyword_retriever.py
+¦   ¦       semantic_retriever.py
+¦   ¦       
+¦   +---vector_stores
+¦           base_vectorstore.py
+¦           chroma_store.py
+¦           
++---services
+        chat_interface.py
+        chat_service.py
+        chat_service_phase3.py
+        document_interface.py
+        document_service.py
+        document_service_implementation.py
+        embedding_service.py
+        init.py
+        retrieval_service.py
+        retrieval_service_alt.py
+        search_service.py
+        services_init.py
+        service_integration.py
+        service_integration_alt.py
+        session_service.py
+        vector_store_service.py
+        

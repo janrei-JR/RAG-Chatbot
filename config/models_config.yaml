@@ -1,0 +1,465 @@
+# RAG Industrial - Modell-spezifische Konfiguration
+# Service-orientierte Architektur v5.0.0
+# Lokale und Cloud-basierte KI-Modelle für industrielle Anwendungen
+
+# =============================================================================
+# LLM-MODELLE KONFIGURATION
+# =============================================================================
+llm_models:
+  # Ollama Lokale Modelle (Standard für industrielle Umgebungen)
+  ollama:
+    base_url: "http://localhost:11434"
+    timeout_seconds: 120
+    max_retries: 3
+    retry_delay_seconds: 2
+    
+    # Verfügbare Modelle nach Anwendungsfall
+    models:
+      # Hauptmodelle für Production
+      primary:
+        llama3.1_8b:
+          model_name: "llama3.1:8b"
+          context_window: 131072
+          max_tokens: 4096
+          temperature: 0.1
+          description: "Meta Llama 3.1 8B - Ausgewogene Performance für industrielle Dokumentenanalyse"
+          best_for: ["document_qa", "technical_analysis", "general_chat"]
+          languages: ["de", "en", "fr", "es"]
+          
+        llama3.1_70b:
+          model_name: "llama3.1:70b"
+          context_window: 131072
+          max_tokens: 4096
+          temperature: 0.05
+          description: "Meta Llama 3.1 70B - Höchste Qualität für komplexe Anfragen"
+          best_for: ["complex_reasoning", "code_analysis", "detailed_explanations"]
+          languages: ["de", "en", "fr", "es", "it", "pt"]
+          resource_requirements:
+            min_ram_gb: 48
+            recommended_ram_gb: 80
+            gpu_memory_gb: 48
+            
+      # Spezialisierte Modelle
+      specialized:
+        mistral_7b:
+          model_name: "mistral:7b"
+          context_window: 32768
+          max_tokens: 2048
+          temperature: 0.2
+          description: "Mistral 7B - Effizient für schnelle Antworten"
+          best_for: ["quick_qa", "summarization", "classification"]
+          languages: ["en", "fr", "de", "es"]
+          
+        codellama_13b:
+          model_name: "codellama:13b"
+          context_window: 16384
+          max_tokens: 2048
+          temperature: 0.0
+          description: "Code Llama 13B - Spezialisiert für Code-Analyse"
+          best_for: ["code_review", "programming_help", "technical_docs"]
+          languages: ["en"]
+          
+        phi3_mini:
+          model_name: "phi3:mini"
+          context_window: 4096
+          max_tokens: 1024
+          temperature: 0.3
+          description: "Microsoft Phi-3 Mini - Kompakt für einfache Aufgaben"
+          best_for: ["simple_qa", "classification", "extraction"]
+          languages: ["en", "de"]
+          resource_requirements:
+            min_ram_gb: 4
+            recommended_ram_gb: 8
+            
+      # Experimentelle und neue Modelle
+      experimental:
+        qwen2_7b:
+          model_name: "qwen2:7b"
+          context_window: 32768
+          max_tokens: 2048
+          temperature: 0.1
+          description: "Qwen2 7B - Mehrsprachig mit Fokus auf Asiatic Languages"
+          best_for: ["multilingual_support", "translation", "cross_cultural_qa"]
+          languages: ["en", "de", "zh", "ja", "ko"]
+          
+        gemma2_9b:
+          model_name: "gemma2:9b"
+          context_window: 8192
+          max_tokens: 2048
+          temperature: 0.15
+          description: "Google Gemma 2 9B - Effizient mit guter Reasoning-Fähigkeit"
+          best_for: ["reasoning", "analysis", "structured_output"]
+          languages: ["en", "de", "fr"]
+
+  # OpenAI Models (für Cloud-Integration)
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    base_url: "https://api.openai.com/v1"
+    timeout_seconds: 60
+    max_retries: 3
+    
+    models:
+      gpt4_turbo:
+        model_name: "gpt-4-turbo"
+        context_window: 128000
+        max_tokens: 4096
+        temperature: 0.1
+        description: "GPT-4 Turbo - Höchste Qualität für kritische Anwendungen"
+        cost_per_1k_tokens:
+          input: 0.01
+          output: 0.03
+          
+      gpt35_turbo:
+        model_name: "gpt-3.5-turbo"
+        context_window: 16384
+        max_tokens: 4096
+        temperature: 0.2
+        description: "GPT-3.5 Turbo - Kosteneffizient für Standard-Aufgaben"
+        cost_per_1k_tokens:
+          input: 0.0015
+          output: 0.002
+
+# =============================================================================
+# EMBEDDING-MODELLE KONFIGURATION
+# =============================================================================
+embedding_models:
+  # Ollama Lokale Embeddings
+  ollama:
+    base_url: "http://localhost:11434"
+    timeout_seconds: 30
+    max_retries: 3
+    batch_size: 16
+    
+    models:
+      # Primäre Embedding-Modelle
+      primary:
+        nomic_embed_text:
+          model_name: "nomic-embed-text"
+          dimensions: 768
+          max_sequence_length: 8192
+          description: "Nomic Embed Text - Ausgezeichnet für deutsche und englische Texte"
+          best_for: ["document_similarity", "semantic_search", "multilingual"]
+          languages: ["de", "en", "fr", "es"]
+          performance:
+            speed: "fast"
+            quality: "high"
+            
+        mxbai_embed_large:
+          model_name: "mxbai-embed-large"
+          dimensions: 1024
+          max_sequence_length: 512
+          description: "MixedBread AI Large - Hohe Qualität für präzise Suche"
+          best_for: ["precise_retrieval", "technical_documents", "code_similarity"]
+          languages: ["en", "de"]
+          performance:
+            speed: "medium"
+            quality: "very_high"
+            
+      # Spezialisierte Embedding-Modelle
+      specialized:
+        snowflake_arctic_embed:
+          model_name: "snowflake-arctic-embed"
+          dimensions: 1024
+          max_sequence_length: 512
+          description: "Snowflake Arctic - Optimiert für Retrieval-Aufgaben"
+          best_for: ["rag_retrieval", "question_answering", "document_ranking"]
+          languages: ["en"]
+          
+        all_minilm_l6_v2:
+          model_name: "all-MiniLM-L6-v2"
+          dimensions: 384
+          max_sequence_length: 256
+          description: "Sentence Transformers - Kompakt und schnell"
+          best_for: ["sentence_similarity", "clustering", "classification"]
+          languages: ["en", "de", "fr", "es", "it"]
+          performance:
+            speed: "very_fast"
+            quality: "good"
+            resource_requirements:
+              min_ram_gb: 1
+              
+        multilingual_e5_large:
+          model_name: "multilingual-e5-large"
+          dimensions: 1024
+          max_sequence_length: 512
+          description: "E5 Multilingual Large - Beste mehrsprachige Performance"
+          best_for: ["cross_lingual_search", "multilingual_similarity", "translation_retrieval"]
+          languages: ["de", "en", "fr", "es", "it", "pt", "nl", "ru", "zh", "ja"]
+          
+  # OpenAI Embeddings
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    base_url: "https://api.openai.com/v1"
+    timeout_seconds: 30
+    max_retries: 3
+    
+    models:
+      text_embedding_3_large:
+        model_name: "text-embedding-3-large"
+        dimensions: 3072
+        max_sequence_length: 8192
+        description: "OpenAI Text Embedding 3 Large - Höchste Qualität"
+        cost_per_1k_tokens: 0.00013
+        
+      text_embedding_3_small:
+        model_name: "text-embedding-3-small"
+        dimensions: 1536
+        max_sequence_length: 8192
+        description: "OpenAI Text Embedding 3 Small - Kosteneffizient"
+        cost_per_1k_tokens: 0.00002
+
+# =============================================================================
+# MODELL-AUSWAHL STRATEGIEN
+# =============================================================================
+model_selection:
+  # Automatische Modell-Auswahl basierend auf Anfrage-Typ
+  auto_selection:
+    enabled: true
+    
+    # Regeln für LLM-Auswahl
+    llm_rules:
+      - condition: "query_length > 5000 OR complexity == 'high'"
+        model: "ollama.llama3.1_70b"
+        fallback: "ollama.llama3.1_8b"
+        
+      - condition: "task_type == 'code_analysis'"
+        model: "ollama.codellama_13b"
+        fallback: "ollama.llama3.1_8b"
+        
+      - condition: "response_time_critical == true"
+        model: "ollama.phi3_mini"
+        fallback: "ollama.mistral_7b"
+        
+      - condition: "language != 'en' AND language != 'de'"
+        model: "ollama.qwen2_7b"
+        fallback: "ollama.llama3.1_8b"
+        
+      # Standard-Regel
+      - condition: "default"
+        model: "ollama.llama3.1_8b"
+        fallback: "ollama.mistral_7b"
+        
+    # Regeln für Embedding-Auswahl
+    embedding_rules:
+      - condition: "document_type == 'technical' OR domain == 'engineering'"
+        model: "ollama.mxbai_embed_large"
+        fallback: "ollama.nomic_embed_text"
+        
+      - condition: "multilingual == true"
+        model: "ollama.multilingual_e5_large"
+        fallback: "ollama.nomic_embed_text"
+        
+      - condition: "performance_mode == 'fast'"
+        model: "ollama.all_minilm_l6_v2"
+        fallback: "ollama.nomic_embed_text"
+        
+      # Standard-Regel
+      - condition: "default"
+        model: "ollama.nomic_embed_text"
+        fallback: "ollama.all_minilm_l6_v2"
+
+# =============================================================================
+# PERFORMANCE UND RESOURCE MANAGEMENT
+# =============================================================================
+performance:
+  # Model Loading und Caching
+  model_caching:
+    enabled: true
+    keep_models_loaded: true
+    max_models_in_memory: 3
+    unload_after_minutes: 30
+    
+  # Batch Processing
+  batch_processing:
+    llm_batch_size: 1  # LLMs meist einzeln
+    embedding_batch_size: 32
+    max_concurrent_requests: 4
+    request_timeout_seconds: 300
+    
+  # Resource Monitoring
+  resource_monitoring:
+    enabled: true
+    memory_threshold_percent: 85
+    gpu_memory_threshold_percent: 90
+    auto_model_unloading: true
+    
+  # Load Balancing zwischen Modellen
+  load_balancing:
+    enabled: false  # Für Multi-GPU Setups
+    strategy: "round_robin"  # round_robin, least_loaded, performance_based
+    health_check_interval_seconds: 30
+
+# =============================================================================
+# MODELL-SPEZIFISCHE OPTIMIERUNGEN
+# =============================================================================
+optimizations:
+  # Ollama-spezifische Optimierungen
+  ollama:
+    # Modell-Preloading für bessere Response-Zeiten
+    preload_models:
+      - "llama3.1:8b"
+      - "nomic-embed-text"
+      
+    # NUMA-Awareness für Multi-Socket Systeme
+    numa_config:
+      enabled: false
+      preferred_nodes: [0]
+      
+    # GPU-Konfiguration
+    gpu_config:
+      enabled: true
+      gpu_memory_fraction: 0.8
+      allow_memory_growth: true
+      
+  # Prompt-Optimierungen
+  prompt_optimization:
+    # Template-Caching für häufige Prompts
+    template_caching: true
+    
+    # Prompt-Compression für lange Kontexte
+    compression_enabled: true
+    compression_threshold_tokens: 8000
+    
+    # System-Prompts für verschiedene Anwendungsfälle
+    system_prompts:
+      technical_analysis: |
+        Du bist ein Experte für technische Dokumentenanalyse in industriellen Umgebungen.
+        Antworte präzise, faktenbasiert und strukturiert auf Deutsch.
+        Berücksichtige Sicherheitsaspekte und Normen bei deinen Antworten.
+        
+      general_qa: |
+        Du bist ein hilfsreicher Assistent für die Analyse von Dokumenten.
+        Antworte höflich, präzise und verständlich auf Deutsch.
+        Zitiere relevante Quellen und gib strukturierte Antworten.
+        
+      code_analysis: |
+        You are an expert in code analysis and software engineering.
+        Provide precise, technical answers with code examples when appropriate.
+        Focus on best practices, security, and maintainability.
+
+# =============================================================================
+# QUALITY ASSURANCE UND TESTING
+# =============================================================================
+quality_assurance:
+  # Model Response Validation
+  response_validation:
+    enabled: true
+    max_response_length: 8192
+    min_response_length: 10
+    detect_hallucinations: true
+    
+  # A/B Testing zwischen Modellen
+  ab_testing:
+    enabled: false
+    test_percentage: 10
+    compare_models: ["ollama.llama3.1_8b", "ollama.mistral_7b"]
+    metrics: ["response_time", "user_satisfaction", "accuracy"]
+    
+  # Model Performance Benchmarking
+  benchmarking:
+    enabled: true
+    benchmark_interval_hours: 24
+    test_queries_file: "./tests/benchmark_queries.yaml"
+    performance_thresholds:
+      max_response_time_seconds: 10
+      min_relevance_score: 0.7
+      max_hallucination_rate: 0.05
+
+# =============================================================================
+# COMPLIANCE UND SECURITY
+# =============================================================================
+security:
+  # Modell-Zugriffskontrolle
+  access_control:
+    enabled: true
+    require_authentication: false  # Für lokale Modelle oft nicht nötig
+    allowed_model_categories: ["primary", "specialized"]
+    blocked_models: []  # Modelle die nicht verwendet werden sollen
+    
+  # Input Sanitization
+  input_sanitization:
+    enabled: true
+    max_input_length: 16384
+    filter_special_characters: false  # Kann bei Code-Analyse stören
+    detect_prompt_injection: true
+    
+  # Output Filtering
+  output_filtering:
+    enabled: true
+    filter_sensitive_information: true
+    anonymize_personal_data: true
+    content_safety_check: false  # Für industrielle Anwendungen meist nicht nötig
+
+# =============================================================================
+# MONITORING UND ALERTING
+# =============================================================================
+monitoring:
+  # Model Health Monitoring
+  health_monitoring:
+    enabled: true
+    check_interval_seconds: 60
+    health_check_timeout_seconds: 10
+    
+    # Health-Check Kriterien
+    health_criteria:
+      response_time_threshold_seconds: 5
+      error_rate_threshold_percent: 5
+      memory_usage_threshold_percent: 90
+      
+  # Performance Metriken
+  metrics:
+    enabled: true
+    export_format: "prometheus"
+    export_interval_seconds: 30
+    
+    # Verfügbare Metriken
+    available_metrics:
+      - "model_response_time"
+      - "model_requests_total"
+      - "model_errors_total" 
+      - "model_memory_usage"
+      - "embedding_cache_hit_rate"
+      - "token_usage_total"
+      
+  # Alerting Rules
+  alerts:
+    - name: "model_response_slow"
+      condition: "avg_response_time > 10s for 2 minutes"
+      severity: "warning"
+      
+    - name: "model_error_rate_high"
+      condition: "error_rate > 10% for 5 minutes"
+      severity: "critical"
+      
+    - name: "model_unavailable"
+      condition: "model_health_check_failed for 1 minute"
+      severity: "critical"
+
+# =============================================================================
+# FALLBACK UND DISASTER RECOVERY
+# =============================================================================
+fallback:
+  # Automatische Fallback-Mechanismen
+  auto_fallback:
+    enabled: true
+    fallback_on_error: true
+    fallback_on_timeout: true
+    max_fallback_attempts: 2
+    
+  # Fallback-Hierarchie
+  hierarchies:
+    llm_fallback:
+      - "ollama.llama3.1_8b"
+      - "ollama.mistral_7b"
+      - "ollama.phi3_mini"
+      
+    embedding_fallback:
+      - "ollama.nomic_embed_text"
+      - "ollama.all_minilm_l6_v2"
+      
+  # Disaster Recovery
+  disaster_recovery:
+    enabled: true
+    backup_model_endpoints: []
+    emergency_mode_models: ["ollama.phi3_mini", "ollama.all_minilm_l6_v2"]
+    degraded_service_message: "System läuft im reduzierten Modus. Einige Funktionen sind eingeschränkt verfügbar."

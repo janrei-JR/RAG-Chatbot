@@ -1,0 +1,96 @@
+# RAG Industrial - Entwicklungsumgebung Konfiguration
+# Service-orientierte Architektur v4.0.0 - ALLE PARAMETER KORRIGIERT
+
+application:
+  name: "RAG Industrial Chatbot"
+  version: "4.0.0"
+  description: "Service-orientierte RAG-Architektur für industrielle Dokumentenanalyse"
+  environment: "development"
+  debug_mode: true
+
+# LLM-Konfiguration (PROVIDER PARAMETER KORRIGIERT)
+llm:
+  # BUGFIX: "provider" -> "providers" (als Liste)
+  providers:
+    - "ollama"
+  model_name: "llama3.1:8b"
+  base_url: "http://localhost:11434"
+  temperature: 0.1
+  max_tokens: 2048
+  timeout: 60
+  retry_attempts: 3
+  fallback_models:
+    - "llama3.1:8b"
+    - "llama2:7b"
+    - "mistral:7b"
+
+# Embedding-Konfiguration (PROVIDER PARAMETER KORRIGIERT)  
+embeddings:
+  # BUGFIX: "provider" -> "providers" (als Liste)
+  providers:
+    - "ollama"
+  model_name: "nomic-embed-text"
+  base_url: "http://localhost:11434"
+  dimensions: 768
+  batch_size: 16
+  cache_embeddings: true
+  max_retries: 3
+  fallback_models:
+    - "nomic-embed-text"
+    - "mxbai-embed-large"
+    - "snowflake-arctic-embed"
+
+# Vector Store Konfiguration (PROVIDER PARAMETER KORRIGIERT)
+vector_store:
+  # BUGFIX: "provider" -> "providers" (als Liste)
+  providers:
+    - "chroma"
+  persist_directory: "./data/vectorstore"
+  collection_name: "industrial_documents"
+  distance_metric: "cosine"
+  chroma:
+    host: "localhost"
+    port: 8000
+    ssl: false
+    headers: {}
+
+# Text-Processing Konfiguration (CONTENT_TYPES ENTFERNT)
+text_processing:
+  chunk_size: 800
+  chunk_overlap: 150
+  separators:
+    - "\n\n# "
+    - "\n\n## "
+    - "\n\n### "
+    - "\n\n"
+    - "\n"
+    - ". "
+  min_chunk_size: 100
+  max_chunk_size: 2000
+  # BUGFIX: content_types Parameter entfernt (nicht unterstützt)
+  enable_preprocessing: true
+  remove_whitespace: true
+  normalize_unicode: true
+  filter_empty_chunks: true
+
+# Logging-Konfiguration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_path: "./data/logs/rag_system.log"
+  max_file_size: 10485760  # 10MB
+  backup_count: 5
+  json_format: false
+
+# Performance-Konfiguration
+performance:
+  max_concurrent_requests: 10
+  request_timeout: 300
+  retry_attempts: 3
+  cache_enabled: true
+  
+# Security-Konfiguration (optional)
+security:
+  enable_authentication: false
+  api_key_required: false
+  rate_limiting: false
