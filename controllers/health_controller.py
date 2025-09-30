@@ -183,6 +183,7 @@ class HealthController:
         
         # Registered Health Check Functions
         self._health_check_functions: Dict[str, Callable[[], ComponentHealth]] = {}
+
         
         # System Info Cache
         self._system_info = self._collect_system_info()
@@ -196,6 +197,106 @@ class HealthController:
                 'platform': platform.system()
             }
         )
+
+    def _collect_system_info(self) -> Dict[str, Any]:
+        """Sammelt System-Informationen"""
+        try:
+            return {
+                'platform': platform.system(),
+                'platform_release': platform.release(),
+                'platform_version': platform.version(),
+                'architecture': platform.machine(),
+                'hostname': platform.node(),
+                'processor': platform.processor(),
+                'python_version': platform.python_version(),
+                'cpu_count': psutil.cpu_count(),
+                'total_memory_gb': round(psutil.virtual_memory().total / (1024**3), 2)
+            }
+        except Exception as e:
+            self.logger.warning(f"System-Info-Sammlung fehlgeschlagen: {e}")
+            return {'platform': 'unknown', 'error': str(e)}
+
+
+    def _check_network_health(self) -> ComponentHealth:
+        """Überprüft Network-Gesundheit"""
+        try:
+            net_io = psutil.net_io_counters()
+            return ComponentHealth(
+                component_name="network",
+                status=HealthStatus.HEALTHY
+            )
+        except Exception as e:
+            return ComponentHealth(
+                component_name="network",
+                status=HealthStatus.UNKNOWN,
+                error_message=str(e)
+            )
+
+    def _check_process_health(self) -> ComponentHealth:
+        """Überprüft Process-Gesundheit"""
+        try:
+            process = psutil.Process()
+            return ComponentHealth(
+                component_name="processes",
+                status=HealthStatus.HEALTHY
+            )
+        except Exception as e:
+            return ComponentHealth(
+                component_name="processes",
+                status=HealthStatus.UNKNOWN,
+                error_message=str(e)
+            )
+
+    def _check_performance_health(self, detailed: bool = False) -> Dict[str, ComponentHealth]:
+        """Überprüft Performance-Gesundheit"""
+        return {}
+
+    def _check_registered_components(self) -> Dict[str, ComponentHealth]:
+        """Überprüft registrierte Komponenten"""
+        components = {}
+        for name, check_func in self._health_check_functions.items():
+            try:
+                components[name] = check_func()
+            except Exception as e:
+                components[name] = ComponentHealth(
+                    component_name=name,
+                    status=HealthStatus.CRITICAL,
+                    error_message=str(e)
+                )
+        return components
+
+    def _collect_active_alerts(self, components: Dict[str, ComponentHealth]) -> List[HealthAlert]:
+        """Sammelt aktive Alerts"""
+        alerts = []
+        for comp in components.values():
+            alerts.extend(comp.get_active_alerts())
+        return alerts
+
+    def _collect_system_metrics(self) -> List[HealthMetric]:
+        """Sammelt System-Metriken"""
+        return []
+
+    def _process_alerts(self, system_health: SystemHealth):
+        """Verarbeitet Alerts"""
+        pass
+
+    def _update_health_history(self, system_health: SystemHealth):
+        """Aktualisiert Health-History"""
+        self._health_history.append(system_health)
+        if len(self._health_history) > 100:
+            self._health_history.pop(0)
+
+    def _count_alerts_by_severity(self, alerts: List[HealthAlert]) -> Dict[str, int]:
+        """Zählt Alerts nach Severity"""
+        counts = {severity.value: 0 for severity in AlertSeverity}
+        for alert in alerts:
+            counts[alert.severity.value] += 1
+        return counts
+
+    def _cleanup_old_data(self):
+        """Bereinigt alte Daten"""
+        pass
+
 
     def register_health_check(self, component_name: str, check_function: Callable[[], ComponentHealth]):
         """

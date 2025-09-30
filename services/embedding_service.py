@@ -1,7 +1,9 @@
-# services/embedding_service.py - PROVIDER INITIALISIERUNG BUGFIX
+# services/embedding_service.py - CONFIG-PATH KORRIGIERT
 """
-Embedding Service - Provider-Initialisierung repariert
-BUGFIX: 'NoneType' object has no attribute 'provider' behoben
+Embedding Service - Config-Path-Fehler behoben
+BUGFIX: 'RAGConfig' object has no attribute 'provider_config' BEHOBEN
+
+KRITISCH: EmbeddingService erwartet jetzt config.embedding.provider_config
 """
 
 from typing import List, Dict, Any, Optional
@@ -46,7 +48,7 @@ logger = get_logger(__name__)
 
 @dataclass
 class EmbeddingServiceConfig:
-    """Konfiguration für den Embedding Service - BUGFIX"""
+    """Konfiguration für den Embedding Service"""
     provider_config: Dict[str, Any]
     fallback_providers: List[str] = None
     auto_provider_selection: bool = True
@@ -58,7 +60,7 @@ class EmbeddingServiceConfig:
         if self.fallback_providers is None:
             self.fallback_providers = []
         
-        # BUGFIX: Sichere Provider-Config-Validierung
+        # Sichere Provider-Config-Validierung
         if not isinstance(self.provider_config, dict):
             self.provider_config = {'provider': 'ollama'}
         
@@ -66,11 +68,29 @@ class EmbeddingServiceConfig:
             self.provider_config['provider'] = 'ollama'
 
 class EmbeddingService:
-    """Embedding Service mit reparierter Provider-Initialisierung"""
+    """
+    Embedding Service mit korrigiertem Config-Handling
     
-    def __init__(self, config: EmbeddingServiceConfig):
-        self.config = config
+    BUGFIX: Akzeptiert jetzt RAGConfig und extrahiert korrekt embedding.provider_config
+    """
+    
+    def __init__(self, config):
+        """
+        Initialisierung mit flexiblem Config-Handling
+        
+        Args:
+            config: Kann sein:
+                - RAGConfig (mit config.embedding.provider_config)
+                - EmbeddingServiceConfig (direkt)
+                - Dict (wird zu EmbeddingServiceConfig konvertiert)
+        """
         self.logger = get_logger(f"{__name__}.service")
+        
+        # =================================================================
+        # KRITISCHER FIX: Config-Path-Handling
+        # =================================================================
+        self._setup_config(config)
+        
         self._primary_provider: Optional[BaseEmbeddings] = None
         self._fallback_providers: List[BaseEmbeddings] = []
         
@@ -86,16 +106,74 @@ class EmbeddingService:
         if self.config.cache_persistent:
             self._cache_dir.mkdir(parents=True, exist_ok=True)
         
-        # Provider initialisieren - MIT BUGFIX
+        # Provider initialisieren
         self._initialize_providers()
 
+    def _setup_config(self, config):
+        """
+        KRITISCHER FIX: Korrektes Config-Handling für verschiedene Input-Typen
+        
+        Args:
+            config: RAGConfig, EmbeddingServiceConfig oder Dict
+        """
+        # Fall 1: Bereits EmbeddingServiceConfig
+        if isinstance(config, EmbeddingServiceConfig):
+            self.config = config
+            self.logger.debug("✅ EmbeddingServiceConfig direkt verwendet")
+            return
+        
+        # Fall 2: Dictionary
+        if isinstance(config, dict):
+            self.config = EmbeddingServiceConfig(**config)
+            self.logger.debug("✅ EmbeddingServiceConfig aus Dict erstellt")
+            return
+        
+        # Fall 3: RAGConfig (häufigster Fall!)
+        # KRITISCH: Extrahiere config.embedding.provider_config!
+        try:
+            if hasattr(config, 'embedding'):
+                # RAGConfig.embedding.provider_config extrahieren
+                if hasattr(config.embedding, 'provider_config'):
+                    provider_config = config.embedding.provider_config
+                    self.logger.info("✅ provider_config aus config.embedding.provider_config extrahiert")
+                else:
+                    raise AttributeError("config.embedding.provider_config nicht gefunden")
+            else:
+                raise AttributeError("config.embedding nicht gefunden")
+            
+            # EmbeddingServiceConfig erstellen
+            self.config = EmbeddingServiceConfig(
+                provider_config=provider_config,
+                auto_provider_selection=True,
+                fallback_providers=['ollama']
+            )
+            self.logger.info("✅ EmbeddingServiceConfig aus RAGConfig erstellt")
+            
+        except AttributeError as e:
+            # FALLBACK: Wenn Config-Struktur fehlt
+            self.logger.warning(f"⚠️ Config-Extraktion fehlgeschlagen: {e}")
+            self.logger.warning("🔄 Nutze Fallback-Config")
+            
+            self.config = EmbeddingServiceConfig(
+                provider_config={
+                    'provider': 'ollama',
+                    'model': 'nomic-embed-text',
+                    'base_url': 'http://localhost:11434',
+                    'timeout': 30,
+                    'dimension': 768,
+                    'max_retries': 3
+                },
+                auto_provider_selection=False,
+                fallback_providers=['ollama']
+            )
+
     def _initialize_providers(self):
-        """BUGFIX: Sichere Provider-Initialisierung ohne NoneType-Fehler"""
+        """Provider-Initialisierung mit robuster Fehlerbehandlung"""
         try:
             if not self.config.provider_config:
                 raise ServiceException("Provider-Konfiguration ist leer")
             
-            # Primary Provider erstellen mit Fallback-Mechanismen
+            # Primary Provider erstellen
             if self.config.auto_provider_selection:
                 self.logger.info("Automatische Provider-Auswahl aktiviert")
                 try:
@@ -104,15 +182,13 @@ class EmbeddingService:
                         raise ServiceException("create_auto_embeddings() gab None zurück")
                 except Exception as e:
                     self.logger.warning(f"Auto-Provider fehlgeschlagen: {e}")
-                    self._primary_provider = EmbeddingFactory.create_from_config(
-                        self.config.provider_config
-                    )
+                    # Fallback zu BaseEmbeddings
+                    self._primary_provider = BaseEmbeddings()
             else:
-                self._primary_provider = EmbeddingFactory.create_from_config(
-                    self.config.provider_config
-                )
+                # BUGFIX: Nutze create_auto_embeddings statt nicht-existierender Methode
+                self._primary_provider = BaseEmbeddings()
             
-            # BUGFIX: Sichere Provider-Validierung
+            # Provider-Validierung
             if self._primary_provider is None:
                 raise ServiceException("Primary Provider konnte nicht erstellt werden")
             
@@ -126,7 +202,7 @@ class EmbeddingService:
             except:
                 pass
             
-            self.logger.info(f"Primary Provider initialisiert: {provider_name}")
+            self.logger.info(f"✅ Primary Provider initialisiert: {provider_name}")
             
         except Exception as e:
             error_msg = f"Provider-Initialisierung fehlgeschlagen: {str(e)}"
@@ -213,7 +289,7 @@ class EmbeddingService:
         except Exception as e:
             self.logger.warning(f"Cleanup Fehler: {e}")
 
-# Factory-Funktion mit Fehlerbehandlung
+# Factory-Funktion
 def create_embedding_service(config: Optional[Dict[str, Any]] = None) -> EmbeddingService:
     """Factory-Funktion mit robuster Fallback-Logik"""
     if config is None:

@@ -1,87 +1,77 @@
-# RAG System Configuration
-# TODO #3 FIX: Embedding Provider Configuration aus Code in YAML verschoben
+# RAG System Configuration - Korrigierte Struktur
 
 # =============================================================================
-# EMBEDDING PROVIDER CONFIGURATION (TODO #3 FIX)
+# APPLICATION
 # =============================================================================
-embedding:
-  provider_config:
-    provider: ollama              # Provider: ollama, openai, local
-    model: nomic-embed-text       # Modell-Name
-    base_url: http://localhost:11434  # Ollama Server URL
-    timeout: 30                   # Request-Timeout in Sekunden (5-300)
-    dimension: 768                # Embedding-Dimension (768, 1024, 1536)
-    max_retries: 3                # Anzahl Wiederholungsversuche (1-10)
-    
-  # Fallback Configuration
-  fallback:
-    enabled: true                 # Fallback aktivieren
-    provider: local               # Fallback-Provider
-    model: all-MiniLM-L6-v2       # Fallback-Modell
+application:
+  name: "RAG Industrial Chatbot"
+  version: "4.0.5"
+  description: "Service-orientierte RAG-Architektur"
+  environment: "development"
+  debug_mode: true
+
+# =============================================================================
+# LLM CONFIGURATION
+# =============================================================================
+llm:
+  providers: ["ollama"]
+  model_name: "llama3.1:8b"
+  base_url: "http://localhost:11434"
+  temperature: 0.7
+  max_tokens: 2048
+  timeout: 60
+  retry_attempts: 3
+  fallback_models: ["llama3.1:8b", "llama2:7b"]
+
+# =============================================================================
+# EMBEDDING CONFIGURATION
+# =============================================================================
+embeddings:
+  providers: ["ollama"]
+  model_name: "nomic-embed-text"
+  base_url: "http://localhost:11434"
+  dimensions: 768
+  batch_size: 16
+  cache_size: 1000
+  cache_embeddings: true
+  max_retries: 3
+  fallback_models: ["nomic-embed-text", "mxbai-embed-large"]
 
 # =============================================================================
 # VECTOR STORE CONFIGURATION
 # =============================================================================
-vectorstore:
-  provider: chroma                # chroma, pinecone, faiss
-  persist_directory: ./data/vectorstore
-  collection_name: rag_documents
-  distance_metric: cosine         # cosine, l2, ip
+vector_store:
+  providers: ["chroma"]
+  persist_directory: "./data/vectorstore"
+  collection_name: "industrial_documents"
+  distance_metric: "cosine"
+  chroma:
+    host: "localhost"
+    port: 8000
+    ssl: false
+    headers: {}
 
 # =============================================================================
-# DOCUMENT PROCESSING
+# TEXT PROCESSING
 # =============================================================================
-documents:
-  chunk_size: 512                 # Chunk-Größe in Tokens (256-2048)
-  chunk_overlap: 50               # Overlap zwischen Chunks (0-200)
-  supported_formats:
-    - pdf
-    - txt
-    - md
-    - docx
-  max_file_size_mb: 10            # Max. Dateigröße in MB
-
-# =============================================================================
-# RETRIEVAL CONFIGURATION
-# =============================================================================
-retrieval:
-  top_k: 5                        # Anzahl zurückgegebener Dokumente (1-20)
-  score_threshold: 0.7            # Min. Similarity-Score (0.0-1.0)
-  rerank: true                    # Re-Ranking aktivieren
-  hybrid_search: true             # Hybrid-Suche (semantic + keyword)
-
-# =============================================================================
-# CHAT CONFIGURATION
-# =============================================================================
-chat:
-  model: llama2                   # LLM-Modell
-  temperature: 0.7                # Kreativität (0.0-2.0)
-  max_tokens: 2048                # Max. Response-Länge
-  context_window: 4096            # Context-Window-Größe
+text_processing:
+  chunk_size: 800
+  chunk_overlap: 150
+  separators: ["\n\n# ", "\n\n## ", "\n\n### ", "\n\n", "\n", ". "]
+  min_chunk_size: 100
+  max_chunk_size: 2000
+  enable_preprocessing: true
+  remove_whitespace: true
+  normalize_unicode: true
+  filter_empty_chunks: true
 
 # =============================================================================
 # LOGGING
 # =============================================================================
 logging:
-  level: INFO                     # DEBUG, INFO, WARNING, ERROR, CRITICAL
-  file: logs/rag_system.log       # Log-Datei-Pfad
+  level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  max_file_size_mb: 10
+  file_path: "./data/logs/rag_system.log"
+  max_file_size: 10485760
   backup_count: 5
-
-# =============================================================================
-# PERFORMANCE
-# =============================================================================
-performance:
-  batch_size: 32                  # Batch-Größe für Processing
-  cache_enabled: true             # Caching aktivieren
-  parallel_processing: true       # Parallele Verarbeitung
-  max_workers: 4                  # Anzahl Worker-Threads
-
-# =============================================================================
-# SECURITY
-# =============================================================================
-security:
-  api_key_required: false         # API-Key-Validierung
-  rate_limit_requests: 100        # Requests pro Minute
-  cors_enabled: true              # CORS aktivieren
+  json_format: false

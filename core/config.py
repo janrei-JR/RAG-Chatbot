@@ -348,17 +348,14 @@ class RAGConfig:
         """Konvertiere zu Dictionary"""
         return asdict(self)
     
-
-
     # HOTFIX: Fehlende Properties
     @property
     def auto_provider_selection(self) -> bool:
         """Automatische Provider-Auswahl aktiviert"""
         return getattr(self.embeddings, 'auto_provider_selection', True)
+    
     def validate(self) -> List[str]:
-        """
-        Validiere Konfiguration und liefere Liste von Fehlern zurück
-        """
+        """Validiere Konfiguration und liefere Liste von Fehlern zurück"""
         errors = []
         
         # LLM Validierung
@@ -395,47 +392,6 @@ class RAGConfig:
         
         return errors
 
-
-# =============================================================================
-# UTILITY FUNCTIONS - VERBESSERT
-# =============================================================================
-
-
-        @property
-        def cache_persistent(self) -> bool:
-            """Gibt an ob Cache persistent ist"""
-            try:
-                return getattr(self, '_cache_persistent', True)
-            except AttributeError:
-                return True
-    
-        @cache_persistent.setter
-        def cache_persistent(self, value: bool):
-            """Setzt Cache-Persistenz"""
-            self._cache_persistent = value
-    
-        @property  
-        def fallback_providers(self) -> list:
-            """Gibt Fallback-Provider für VectorStore zurück"""
-            try:
-                return getattr(self.vector_store, 'providers', ["chroma", "local"])
-            except AttributeError:
-                return ["chroma", "local"]
-    
-        @property
-        def persistence_directory(self) -> str:
-            """Gibt Persistenz-Verzeichnis zurück"""
-            try:
-                return getattr(self, '_persistence_directory', "./data/sessions")
-            except AttributeError:
-                return "./data/sessions"
-    
-        @persistence_directory.setter
-        def persistence_directory(self, value: str):
-            """Setzt Persistenz-Verzeichnis"""
-            self._persistence_directory = value
-
-
     @property
     def processing(self):
         """Text-Processing Konfiguration"""
@@ -444,27 +400,31 @@ class RAGConfig:
     @property
     def app(self):
         """Application-Konfiguration"""
-        return getattr(self, '_app_config', {
+        return {
             'name': self.application.name,
             'version': self.application.version,
             'session_timeout': 3600
-        })
+        }
 
     @property
     def fallback_providers(self) -> list:
         """Fallback-Provider für Services"""
-        try:
-            return getattr(self.vector_store, 'fallback_providers', ['chroma', 'memory'])
-        except AttributeError:
-            return ['chroma', 'memory']
+        return ['chroma', 'memory']
 
     @property
     def cache_persistent(self) -> bool:
         """Cache-Persistenz Konfiguration"""
-        try:
-            return getattr(self.performance, 'cache_persistent', True)
-        except AttributeError:
-            return True
+        return True
+
+    @property
+    def persistence_directory(self) -> str:
+        """Persistenz-Verzeichnis"""
+        return "./data/sessions"
+
+# =============================================================================
+# UTILITY FUNCTIONS (außerhalb der RAGConfig Klasse)
+# =============================================================================
+
 def load_config(config_path: Optional[Union[str, Path]] = None) -> RAGConfig:
     """
     Zentrale Funktion zum Laden der Konfiguration - MIT BUGFIXES
