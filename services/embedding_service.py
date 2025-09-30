@@ -110,38 +110,32 @@ class EmbeddingService:
         self._initialize_providers()
 
     def _setup_config(self, config):
-        """
-        KRITISCHER FIX: Korrektes Config-Handling für verschiedene Input-Typen
-        
-        Args:
-            config: RAGConfig, EmbeddingServiceConfig oder Dict
-        """
-        # Fall 1: Bereits EmbeddingServiceConfig
+        """Config-Handling für verschiedene Input-Typen"""
         if isinstance(config, EmbeddingServiceConfig):
             self.config = config
             self.logger.debug("✅ EmbeddingServiceConfig direkt verwendet")
             return
         
-        # Fall 2: Dictionary
         if isinstance(config, dict):
             self.config = EmbeddingServiceConfig(**config)
             self.logger.debug("✅ EmbeddingServiceConfig aus Dict erstellt")
             return
         
-        # Fall 3: RAGConfig (häufigster Fall!)
-        # KRITISCH: Extrahiere config.embedding.provider_config!
+        # RAGConfig (häufigster Fall)
         try:
-            if hasattr(config, 'embedding'):
-                # RAGConfig.embedding.provider_config extrahieren
-                if hasattr(config.embedding, 'provider_config'):
-                    provider_config = config.embedding.provider_config
-                    self.logger.info("✅ provider_config aus config.embedding.provider_config extrahiert")
-                else:
-                    raise AttributeError("config.embedding.provider_config nicht gefunden")
+            if hasattr(config, 'embeddings'):
+                # Baue provider_config aus embeddings
+                provider_config = {
+                    'provider': config.embeddings.providers[0] if config.embeddings.providers else 'ollama',
+                    'model': config.embeddings.model_name,
+                    'base_url': config.embeddings.base_url,
+                    'dimension': config.embeddings.dimensions,
+                    'max_retries': config.embeddings.max_retries
+                }
+                self.logger.info("✅ provider_config aus config.embeddings extrahiert")
             else:
-                raise AttributeError("config.embedding nicht gefunden")
+                raise AttributeError("config.embeddings nicht gefunden")
             
-            # EmbeddingServiceConfig erstellen
             self.config = EmbeddingServiceConfig(
                 provider_config=provider_config,
                 auto_provider_selection=True,
@@ -150,7 +144,6 @@ class EmbeddingService:
             self.logger.info("✅ EmbeddingServiceConfig aus RAGConfig erstellt")
             
         except AttributeError as e:
-            # FALLBACK: Wenn Config-Struktur fehlt
             self.logger.warning(f"⚠️ Config-Extraktion fehlgeschlagen: {e}")
             self.logger.warning("🔄 Nutze Fallback-Config")
             

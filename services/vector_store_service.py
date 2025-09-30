@@ -235,12 +235,12 @@ class VectorStoreService:
                 vector_store = create_auto_vector_store(
                     provider=provider_name,
                     embeddings=self.embeddings,
-                    config=self.rag_config.vectorstore
+                    config=self.rag_config.vector_store
                 )
             else:
                 vector_store = VectorStoreFactory.create_vector_store(
                     provider=provider_name,
-                    config=self.rag_config.vectorstore
+                    config=self.rag_config.vector_store
                 )
             
             self._vector_stores[provider_name] = vector_store
@@ -824,8 +824,8 @@ def get_vector_store_service_from_config(rag_config: Optional[RAGConfig] = None)
     
     # Service-Config aus RAG-Config ableiten
     service_config = VectorStoreServiceConfig(
-        default_provider=rag_config.vectorstore.default_provider.value,
-        fallback_providers=[rag_config.vectorstore.default_provider.value],
+        default_provider=rag_config.vector_store.providers[0],
+        fallback_providers=rag_config.vector_store.providers,
         auto_provider_selection=True,
         health_check_interval=300,
         batch_size=100,
