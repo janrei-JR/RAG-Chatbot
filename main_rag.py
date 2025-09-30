@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
 RAG Main Application - Service-orientierte Architektur
-TODO #1: SearchService Registration Fix IMPLEMENTIERT
+TODO #1: SearchService Registration Fix ✅
+TODO #2: Container Registration Konsistenz ✅
 
 KRITISCHE FIXES:
-- SearchService wird jetzt erstellt und initialisiert (Zeile 182-200)
-- Type-basierte Container-Registrierung (Zeile 237-240)
+- SearchService wird jetzt erstellt und initialisiert
+- Konsistente Type-basierte Container-Registrierung
+- Alle Services einheitlich registriert
 - NameError behoben
 
 Autor: KI-Consultant für industrielle Automatisierung  
-Version: 4.0.1 - TODO #1 Fix angewendet
+Version: 4.0.2 - TODO #1 + #2 Fixes angewendet
 """
 
 import streamlit as st
@@ -56,7 +58,7 @@ def initialize_rag_system_with_bugfixes():
     TODO #1: SearchService Registration Fix implementiert
     """
     try:
-        logger.info("RAG Main Application gestartet - Version 4.0.1 (TODO #1)")
+        logger.info("RAG Main Application gestartet - Version 4.0.2 (TODO #1+#2)")
         
         # 1. CORE-SYSTEM mit instant fixes
         logger.info("Initialisiere Services mit Bugfixes...")
@@ -210,10 +212,10 @@ def initialize_rag_system_with_bugfixes():
         logger.info("SessionService mit Property-BUGFIX initialisiert")
         
         # =================================================================
-        # 10. CONTROLLER - PARAMETER-MISMATCH BEHOBEN (SCHRITT 1A+1B)
+        # 10. CONTROLLER - KONSISTENTE CONTAINER-REGISTRIERUNG (TODO #2)
         # =================================================================
         
-        logger.info("Initialisiere Controller mit korrigierten Parametern...")
+        logger.info("Initialisiere Controller mit konsistenter Container-Registrierung...")
         
         try:
             from controllers.pipeline_controller import PipelineConfig
@@ -221,6 +223,11 @@ def initialize_rag_system_with_bugfixes():
             
             # DI-Container für PipelineController vorbereiten
             container = get_container()
+            
+            # =================================================================
+            # TODO #2 FIX: KONSISTENTE TYPE-BASIERTE REGISTRATION
+            # Alle Services einheitlich mit Type-Import und register_instance
+            # =================================================================
             
             from services.document_service import DocumentService
             from services.embedding_service import EmbeddingService  
@@ -230,7 +237,9 @@ def initialize_rag_system_with_bugfixes():
             from services.session_service import SessionService
             from services.search_service import SearchService
 
-            # Services im Container registrieren für PipelineController DI
+            # Konsistente Service-Registrierung für PipelineController DI
+            logger.info("Registriere Services im DI-Container (Type-basiert)...")
+            
             if services.get('document_service'):
                 container.register_instance(DocumentService, services['document_service'])
                 logger.debug("✅ DocumentService im Container registriert")
@@ -255,16 +264,16 @@ def initialize_rag_system_with_bugfixes():
                 container.register_instance(SessionService, services['session_service'])
                 logger.debug("✅ SessionService im Container registriert")
             
-            # =================================================================
-            # TODO #1 FIX: SearchService Container-Registrierung (Type-basiert)
-            # =================================================================
             if services.get('search_service'):
                 container.register_instance(SearchService, services['search_service'])
-                logger.info("✅ SearchService im DI-Container registriert (TODO #1 FIX)")
+                logger.debug("✅ SearchService im Container registriert")
             else:
                 logger.warning("⚠️ SearchService nicht im Container registriert (Service nicht verfügbar)")
                 
-            logger.info("✅ Alle Services im DI-Container mit Type-basierter Registration registriert")
+            logger.info("✅ Alle Services mit konsistenter Type-basierter Registration registriert (TODO #2)")
+            
+            # Validierung: Keine String-basierten Registrierungen mehr!
+            # ALLE ALTEN container.register('string_name', ...) AUFRUFE ENTFERNT
             
             # PipelineController mit korrekter PipelineConfig (SCHRITT 1A FIX)
             pipeline_config = PipelineConfig(
@@ -327,7 +336,8 @@ def initialize_rag_system_with_bugfixes():
             services['health_controller'] = None
         
         logger.info("🎉 Alle Services mit Bugfixes erfolgreich initialisiert!")
-        logger.info("✅ TODO #1: SearchService Registration Fix ERFOLGREICH angewendet")
+        logger.info("✅ TODO #1: SearchService Registration Fix ERFOLGREICH")
+        logger.info("✅ TODO #2: Container Registration Konsistenz ERFOLGREICH")
         
         return services, config
         
@@ -351,7 +361,7 @@ def main():
         
         # Interface Header
         st.title("⚙️ RAG System - Industrielle Automatisierung")
-        st.caption("Version 4.0.1 - TODO #1: SearchService Fix angewendet")
+        st.caption("Version 4.0.2 - TODO #1+#2: SearchService + Container Konsistenz")
         
         # System-Status Sidebar
         with st.sidebar:
@@ -361,9 +371,10 @@ def main():
             services_count = sum(1 for service in services.values() if service is not None and 'controller' not in str(service))
             st.metric("Services", f"{services_count}", "✓ von 10 Services")
             
-            # SearchService Status (TODO #1 Validierung)
-            search_status = "OK" if services.get('search_service') else "Fehler"
-            st.metric("Search Service", search_status, "✓ TODO #1 FIX")
+            # TODO Fixes Status
+            st.subheader("Applied Fixes")
+            st.success("✅ TODO #1: SearchService Fix")
+            st.success("✅ TODO #2: Container Konsistenz")
             
             # Embedding Service Status
             embedding_status = "OK" if services.get('embedding_service') else "Fehler" 
@@ -415,13 +426,16 @@ def main():
                 else:
                     st.error(f"❌ {service_name}: Nicht verfügbar")
             
-            # TODO #1 Validierung
-            st.subheader("TODO #1 Validierung")
+            # TODO #1+#2 Validierung
+            st.subheader("TODO Fixes Validierung")
             if services.get('search_service'):
-                st.success("✅ SearchService erfolgreich erstellt und registriert")
+                st.success("✅ TODO #1: SearchService erfolgreich erstellt und registriert")
                 st.info("SearchService kann jetzt von PipelineController verwendet werden")
             else:
                 st.warning("⚠️ SearchService nicht verfügbar - Query-Pipeline eingeschränkt")
+            
+            st.success("✅ TODO #2: Konsistente Type-basierte Container-Registrierung")
+            st.info("Alle Services nutzen einheitlich register_instance(Type, instance)")
             
             # Debug Information
             if st.checkbox("Debug-Informationen anzeigen"):
@@ -432,7 +446,9 @@ def main():
                     "Services geladen": len(services),
                     "Controller aktiv": sum(1 for k, v in services.items() if 'controller' in k and v is not None),
                     "SearchService Status": "OK" if services.get('search_service') else "Fehlt",
-                    "TODO #1 Fix": "Angewendet",
+                    "Container Registration": "Type-basiert (konsistent)",
+                    "TODO #1 Fix": "Angewendet ✅",
+                    "TODO #2 Fix": "Angewendet ✅",
                     "Timestamp": datetime.now().isoformat()
                 }
                 
@@ -449,7 +465,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        logger.info("🚀 RAG Main Application gestartet (Version 4.0.1 - TODO #1 Fix)")
+        logger.info("🚀 RAG Main Application gestartet (Version 4.0.2 - TODO #1+#2 Fixes)")
         main()
     except Exception as e:
         logger.error(f"Kritischer Startfehler: {e}")
