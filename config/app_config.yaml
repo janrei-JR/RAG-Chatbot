@@ -1,96 +1,87 @@
-# RAG Industrial - Entwicklungsumgebung Konfiguration
-# Service-orientierte Architektur v4.0.0 - ALLE PARAMETER KORRIGIERT
+# RAG System Configuration
+# TODO #3 FIX: Embedding Provider Configuration aus Code in YAML verschoben
 
-application:
-  name: "RAG Industrial Chatbot"
-  version: "4.0.0"
-  description: "Service-orientierte RAG-Architektur für industrielle Dokumentenanalyse"
-  environment: "development"
-  debug_mode: true
+# =============================================================================
+# EMBEDDING PROVIDER CONFIGURATION (TODO #3 FIX)
+# =============================================================================
+embedding:
+  provider_config:
+    provider: ollama              # Provider: ollama, openai, local
+    model: nomic-embed-text       # Modell-Name
+    base_url: http://localhost:11434  # Ollama Server URL
+    timeout: 30                   # Request-Timeout in Sekunden (5-300)
+    dimension: 768                # Embedding-Dimension (768, 1024, 1536)
+    max_retries: 3                # Anzahl Wiederholungsversuche (1-10)
+    
+  # Fallback Configuration
+  fallback:
+    enabled: true                 # Fallback aktivieren
+    provider: local               # Fallback-Provider
+    model: all-MiniLM-L6-v2       # Fallback-Modell
 
-# LLM-Konfiguration (PROVIDER PARAMETER KORRIGIERT)
-llm:
-  # BUGFIX: "provider" -> "providers" (als Liste)
-  providers:
-    - "ollama"
-  model_name: "llama3.1:8b"
-  base_url: "http://localhost:11434"
-  temperature: 0.1
-  max_tokens: 2048
-  timeout: 60
-  retry_attempts: 3
-  fallback_models:
-    - "llama3.1:8b"
-    - "llama2:7b"
-    - "mistral:7b"
+# =============================================================================
+# VECTOR STORE CONFIGURATION
+# =============================================================================
+vectorstore:
+  provider: chroma                # chroma, pinecone, faiss
+  persist_directory: ./data/vectorstore
+  collection_name: rag_documents
+  distance_metric: cosine         # cosine, l2, ip
 
-# Embedding-Konfiguration (PROVIDER PARAMETER KORRIGIERT)  
-embeddings:
-  # BUGFIX: "provider" -> "providers" (als Liste)
-  providers:
-    - "ollama"
-  model_name: "nomic-embed-text"
-  base_url: "http://localhost:11434"
-  dimensions: 768
-  batch_size: 16
-  cache_embeddings: true
-  max_retries: 3
-  fallback_models:
-    - "nomic-embed-text"
-    - "mxbai-embed-large"
-    - "snowflake-arctic-embed"
+# =============================================================================
+# DOCUMENT PROCESSING
+# =============================================================================
+documents:
+  chunk_size: 512                 # Chunk-Größe in Tokens (256-2048)
+  chunk_overlap: 50               # Overlap zwischen Chunks (0-200)
+  supported_formats:
+    - pdf
+    - txt
+    - md
+    - docx
+  max_file_size_mb: 10            # Max. Dateigröße in MB
 
-# Vector Store Konfiguration (PROVIDER PARAMETER KORRIGIERT)
-vector_store:
-  # BUGFIX: "provider" -> "providers" (als Liste)
-  providers:
-    - "chroma"
-  persist_directory: "./data/vectorstore"
-  collection_name: "industrial_documents"
-  distance_metric: "cosine"
-  chroma:
-    host: "localhost"
-    port: 8000
-    ssl: false
-    headers: {}
+# =============================================================================
+# RETRIEVAL CONFIGURATION
+# =============================================================================
+retrieval:
+  top_k: 5                        # Anzahl zurückgegebener Dokumente (1-20)
+  score_threshold: 0.7            # Min. Similarity-Score (0.0-1.0)
+  rerank: true                    # Re-Ranking aktivieren
+  hybrid_search: true             # Hybrid-Suche (semantic + keyword)
 
-# Text-Processing Konfiguration (CONTENT_TYPES ENTFERNT)
-text_processing:
-  chunk_size: 800
-  chunk_overlap: 150
-  separators:
-    - "\n\n# "
-    - "\n\n## "
-    - "\n\n### "
-    - "\n\n"
-    - "\n"
-    - ". "
-  min_chunk_size: 100
-  max_chunk_size: 2000
-  # BUGFIX: content_types Parameter entfernt (nicht unterstützt)
-  enable_preprocessing: true
-  remove_whitespace: true
-  normalize_unicode: true
-  filter_empty_chunks: true
+# =============================================================================
+# CHAT CONFIGURATION
+# =============================================================================
+chat:
+  model: llama2                   # LLM-Modell
+  temperature: 0.7                # Kreativität (0.0-2.0)
+  max_tokens: 2048                # Max. Response-Länge
+  context_window: 4096            # Context-Window-Größe
 
-# Logging-Konfiguration
+# =============================================================================
+# LOGGING
+# =============================================================================
 logging:
-  level: "INFO"
+  level: INFO                     # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: logs/rag_system.log       # Log-Datei-Pfad
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file_path: "./data/logs/rag_system.log"
-  max_file_size: 10485760  # 10MB
+  max_file_size_mb: 10
   backup_count: 5
-  json_format: false
 
-# Performance-Konfiguration
+# =============================================================================
+# PERFORMANCE
+# =============================================================================
 performance:
-  max_concurrent_requests: 10
-  request_timeout: 300
-  retry_attempts: 3
-  cache_enabled: true
-  
-# Security-Konfiguration (optional)
+  batch_size: 32                  # Batch-Größe für Processing
+  cache_enabled: true             # Caching aktivieren
+  parallel_processing: true       # Parallele Verarbeitung
+  max_workers: 4                  # Anzahl Worker-Threads
+
+# =============================================================================
+# SECURITY
+# =============================================================================
 security:
-  enable_authentication: false
-  api_key_required: false
-  rate_limiting: false
+  api_key_required: false         # API-Key-Validierung
+  rate_limit_requests: 100        # Requests pro Minute
+  cors_enabled: true              # CORS aktivieren

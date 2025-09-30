@@ -3,15 +3,16 @@
 RAG Main Application - Service-orientierte Architektur
 TODO #1: SearchService Registration Fix ✅
 TODO #2: Container Registration Konsistenz ✅
+TODO #3: Config-Patch entfernt ✅
 
 KRITISCHE FIXES:
 - SearchService wird jetzt erstellt und initialisiert
 - Konsistente Type-basierte Container-Registrierung
+- Config-Defaults in YAML statt Runtime-Patching
 - Alle Services einheitlich registriert
-- NameError behoben
 
 Autor: KI-Consultant für industrielle Automatisierung  
-Version: 4.0.2 - TODO #1 + #2 Fixes angewendet
+Version: 4.0.3 - TODO #1+#2+#3 Fixes angewendet
 """
 
 import streamlit as st
@@ -55,14 +56,55 @@ st.set_page_config(
 def initialize_rag_system_with_bugfixes():
     """
     Initialisiert das komplette RAG-System mit allen Bugfixes
-    TODO #1: SearchService Registration Fix implementiert
+    TODO #1: SearchService Registration Fix ✅
+    TODO #2: Container Registration Konsistenz ✅
+    TODO #3: Config-Patch entfernt ✅
     """
     try:
-        logger.info("RAG Main Application gestartet - Version 4.0.2 (TODO #1+#2)")
+        logger.info("RAG Main Application gestartet - Version 4.0.3 (TODO #1+#2+#3)")
         
-        # 1. CORE-SYSTEM mit instant fixes
+        # 1. CORE-SYSTEM - Config ohne Runtime-Patching
         logger.info("Initialisiere Services mit Bugfixes...")
         config = get_config()
+        
+        # =================================================================
+        # TODO #3 FIX: Config-Validierung statt Runtime-Patching
+        # =================================================================
+        def validate_config(config):
+            """
+            Validiert Config-Struktur ohne Patching
+            Wirft ConfigurationException bei fehlenden Sections
+            """
+            required_sections = ['embedding', 'vectorstore', 'chat', 'documents']
+            missing_sections = []
+            
+            for section in required_sections:
+                if not hasattr(config, section):
+                    missing_sections.append(section)
+            
+            if missing_sections:
+                error_msg = f"Config-Sektionen fehlen in app_config.yaml: {', '.join(missing_sections)}"
+                logger.error(f"❌ {error_msg}")
+                raise ConfigurationException(error_msg)
+            
+            # Spezifische Validierung für embedding.provider_config
+            if not hasattr(config.embedding, 'provider_config'):
+                error_msg = "embedding.provider_config fehlt in app_config.yaml"
+                logger.error(f"❌ {error_msg}")
+                raise ConfigurationException(error_msg)
+            
+            logger.info("✅ Config-Validierung erfolgreich (TODO #3)")
+            return config
+        
+        # Config validieren (KEIN Patching mehr!)
+        try:
+            config = validate_config(config)
+        except ConfigurationException as e:
+            logger.error(f"Config-Validierung fehlgeschlagen: {e}")
+            logger.error("Bitte app_config.yaml mit erforderlichen Sektionen ergänzen")
+            st.error(f"Konfigurationsfehler: {e}")
+            st.info("💡 Tipp: Verwende die bereitgestellte app_config.yaml Template")
+            st.stop()
         
         # 2. SERVICES mit Import-Bugfixes
         logger.info("Lade Services...")
@@ -95,35 +137,17 @@ def initialize_rag_system_with_bugfixes():
             services['document_service'] = None
         logger.info("✅ DocumentService geladen")
         
-        # 4. EmbeddingService mit config Parameter + CONFIG-PATCH (SCHRITT 4)
+        # =================================================================
+        # 4. EmbeddingService - OHNE Config-Patch (TODO #3 FIX)
+        # Config wird aus YAML geladen, kein Runtime-Patching mehr!
+        # =================================================================
         if service_classes.get('EmbeddingService'):
-            # CONFIG-FIX: provider_config Attribut hinzufügen falls fehlend
-            if not hasattr(config, 'provider_config'):
-                config.provider_config = {
-                    'provider': 'ollama',
-                    'model': 'nomic-embed-text',
-                    'base_url': 'http://localhost:11434',
-                    'timeout': 30,
-                    'dimension': 768,
-                    'max_retries': 3
-                }
-                logger.info("✅ provider_config Fallback für EmbeddingService hinzugefügt")
-            elif not config.provider_config:
-                # Auch leere provider_config abfangen
-                config.provider_config = {
-                    'provider': 'ollama',
-                    'model': 'nomic-embed-text',
-                    'base_url': 'http://localhost:11434',
-                    'timeout': 30,
-                    'dimension': 768,
-                    'max_retries': 3
-                }
-                logger.info("✅ Leere provider_config mit Fallback-Werten ersetzt")
-            
+            # Direkt mit config-Parameter - provider_config kommt aus YAML
             services['embedding_service'] = service_classes['EmbeddingService'](config=config)
+            logger.info("✅ EmbeddingService aus YAML-Config geladen (TODO #3)")
         else:
             services['embedding_service'] = None
-        logger.info("✅ EmbeddingService mit config-Parameter und Config-Patch geladen")
+            logger.warning("⚠️ EmbeddingService nicht verfügbar")
         
         # 5. ChatService mit BUGFIX
         if service_classes.get('ChatService'):
@@ -204,7 +228,7 @@ def initialize_rag_system_with_bugfixes():
         
         # SERVICE-INITIALISIERUNG LOGS
         logger.info("DocumentService initialisiert")
-        logger.info("EmbeddingService mit BUGFIX initialisiert")
+        logger.info("EmbeddingService aus YAML-Config initialisiert (TODO #3)")
         logger.info("VectorStoreService mit BUGFIX initialisiert")
         logger.info("RetrievalService initialisiert")
         logger.info("SearchService initialisiert (TODO #1 FIX)")
@@ -338,6 +362,7 @@ def initialize_rag_system_with_bugfixes():
         logger.info("🎉 Alle Services mit Bugfixes erfolgreich initialisiert!")
         logger.info("✅ TODO #1: SearchService Registration Fix ERFOLGREICH")
         logger.info("✅ TODO #2: Container Registration Konsistenz ERFOLGREICH")
+        logger.info("✅ TODO #3: Config-Patch entfernt - YAML-basiert ERFOLGREICH")
         
         return services, config
         
@@ -361,7 +386,7 @@ def main():
         
         # Interface Header
         st.title("⚙️ RAG System - Industrielle Automatisierung")
-        st.caption("Version 4.0.2 - TODO #1+#2: SearchService + Container Konsistenz")
+        st.caption("Version 4.0.3 - TODO #1+#2+#3: SearchService + Container + Config Fixes")
         
         # System-Status Sidebar
         with st.sidebar:
@@ -375,6 +400,7 @@ def main():
             st.subheader("Applied Fixes")
             st.success("✅ TODO #1: SearchService Fix")
             st.success("✅ TODO #2: Container Konsistenz")
+            st.success("✅ TODO #3: Config-Patch entfernt")
             
             # Embedding Service Status
             embedding_status = "OK" if services.get('embedding_service') else "Fehler" 
@@ -426,33 +452,58 @@ def main():
                 else:
                     st.error(f"❌ {service_name}: Nicht verfügbar")
             
-            # TODO #1+#2 Validierung
+            # TODO #1+#2+#3 Validierung
             st.subheader("TODO Fixes Validierung")
+            
+            # TODO #1
             if services.get('search_service'):
                 st.success("✅ TODO #1: SearchService erfolgreich erstellt und registriert")
-                st.info("SearchService kann jetzt von PipelineController verwendet werden")
             else:
-                st.warning("⚠️ SearchService nicht verfügbar - Query-Pipeline eingeschränkt")
+                st.warning("⚠️ SearchService nicht verfügbar")
             
+            # TODO #2
             st.success("✅ TODO #2: Konsistente Type-basierte Container-Registrierung")
             st.info("Alle Services nutzen einheitlich register_instance(Type, instance)")
+            
+            # TODO #3
+            st.success("✅ TODO #3: Config aus YAML - Kein Runtime-Patching mehr")
+            st.info("provider_config wird aus app_config.yaml geladen")
             
             # Debug Information
             if st.checkbox("Debug-Informationen anzeigen"):
                 st.subheader("System-Debug-Info")
                 
+                # Config-Source anzeigen
+                config_source = "YAML" if hasattr(config, 'embedding') else "Fehlt"
+                
                 debug_info = {
                     "Konfiguration": str(config.__class__.__name__),
+                    "Config Source": config_source,
                     "Services geladen": len(services),
                     "Controller aktiv": sum(1 for k, v in services.items() if 'controller' in k and v is not None),
                     "SearchService Status": "OK" if services.get('search_service') else "Fehlt",
                     "Container Registration": "Type-basiert (konsistent)",
+                    "Config Patching": "Entfernt ✅",
                     "TODO #1 Fix": "Angewendet ✅",
                     "TODO #2 Fix": "Angewendet ✅",
+                    "TODO #3 Fix": "Angewendet ✅",
                     "Timestamp": datetime.now().isoformat()
                 }
                 
                 st.json(debug_info)
+                
+                # Config-Details anzeigen
+                if st.checkbox("Config-Details anzeigen"):
+                    st.subheader("Embedding Config")
+                    if hasattr(config, 'embedding') and hasattr(config.embedding, 'provider_config'):
+                        st.json({
+                            "provider": config.embedding.provider_config.get('provider'),
+                            "model": config.embedding.provider_config.get('model'),
+                            "base_url": config.embedding.provider_config.get('base_url'),
+                            "dimension": config.embedding.provider_config.get('dimension')
+                        })
+                    else:
+                        st.error("embedding.provider_config nicht in Config gefunden")
     
     except Exception as e:
         st.error(f"Anwendungsfehler: {e}")
@@ -465,7 +516,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        logger.info("🚀 RAG Main Application gestartet (Version 4.0.2 - TODO #1+#2 Fixes)")
+        logger.info("🚀 RAG Main Application gestartet (Version 4.0.3 - TODO #1+#2+#3 Fixes)")
         main()
     except Exception as e:
         logger.error(f"Kritischer Startfehler: {e}")
