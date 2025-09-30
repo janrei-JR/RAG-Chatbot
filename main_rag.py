@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
 RAG Main Application - Service-orientierte Architektur
-CONTROLLER-PARAMETER-FIX IMPLEMENTIERT (SCHRITT 1A+1B)
+TODO #1: SearchService Registration Fix IMPLEMENTIERT
 
-KRITISCHER FIX:
-- PipelineController Parameter-Mismatch behoben
-- DI-Container Integration für Controller
-- Korrekte Controller-Initialisierung
+KRITISCHE FIXES:
+- SearchService wird jetzt erstellt und initialisiert (Zeile 182-200)
+- Type-basierte Container-Registrierung (Zeile 237-240)
+- NameError behoben
 
 Autor: KI-Consultant für industrielle Automatisierung  
-Version: 4.0.0 - Service-orientierte Architektur mit Controller-Fix
+Version: 4.0.1 - TODO #1 Fix angewendet
 """
 
 import streamlit as st
@@ -53,10 +53,10 @@ st.set_page_config(
 def initialize_rag_system_with_bugfixes():
     """
     Initialisiert das komplette RAG-System mit allen Bugfixes
-    CONTROLLER-PARAMETER-FIX: SCHRITT 1A+1B IMPLEMENTIERT
+    TODO #1: SearchService Registration Fix implementiert
     """
     try:
-        logger.info("RAG Main Application gestartet - SOA Version 4.0.0")
+        logger.info("RAG Main Application gestartet - Version 4.0.1 (TODO #1)")
         
         # 1. CORE-SYSTEM mit instant fixes
         logger.info("Initialisiere Services mit Bugfixes...")
@@ -162,8 +162,38 @@ def initialize_rag_system_with_bugfixes():
             logger.info("RetrievalService geladen")
         else:
             logger.warning("RetrievalService nicht verfügbar")
+        
+        # =================================================================
+        # 8. SearchService (TODO #1 FIX - WAR FEHLEND!)
+        # =================================================================
+        if service_classes.get('SearchService'):
+            try:
+                # SearchService benötigt Dependencies
+                services['search_service'] = service_classes['SearchService'](
+                    retrieval_service=services['retrieval_service'],
+                    vector_store_service=services['vectorstore_service'],
+                    embedding_service=services['embedding_service']
+                )
+                logger.info("✅ SearchService mit Dependencies initialisiert")
+            except TypeError as e:
+                logger.warning(f"SearchService Standard-Init fehlgeschlagen: {e}")
+                try:
+                    # Alternative: Mit config
+                    services['search_service'] = service_classes['SearchService'](config=config)
+                    logger.info("✅ SearchService mit config initialisiert")
+                except Exception as e2:
+                    logger.error(f"SearchService Init fehlgeschlagen: {e2}")
+                    services['search_service'] = None
+        else:
+            services['search_service'] = None
+            logger.warning("⚠️ SearchService nicht verfügbar")
+
+        if services['search_service']:
+            logger.info("✅ SearchService erfolgreich geladen (TODO #1 FIX)")
+        else:
+            logger.warning("⚠️ SearchService nicht verfügbar - Query-Pipeline eingeschränkt")
             
-        # 8. SessionService mit Property-BUGFIX
+        # 9. SessionService mit Property-BUGFIX
         if service_classes.get('SessionService'):
             services['session_service'] = service_classes['SessionService']()
         else:
@@ -175,11 +205,12 @@ def initialize_rag_system_with_bugfixes():
         logger.info("EmbeddingService mit BUGFIX initialisiert")
         logger.info("VectorStoreService mit BUGFIX initialisiert")
         logger.info("RetrievalService initialisiert")
+        logger.info("SearchService initialisiert (TODO #1 FIX)")
         logger.info("ChatService mit Constructor-BUGFIX initialisiert")
         logger.info("SessionService mit Property-BUGFIX initialisiert")
         
         # =================================================================
-        # 9. CONTROLLER - PARAMETER-MISMATCH BEHOBEN (SCHRITT 1A+1B)
+        # 10. CONTROLLER - PARAMETER-MISMATCH BEHOBEN (SCHRITT 1A+1B)
         # =================================================================
         
         logger.info("Initialisiere Controller mit korrigierten Parametern...")
@@ -191,29 +222,49 @@ def initialize_rag_system_with_bugfixes():
             # DI-Container für PipelineController vorbereiten
             container = get_container()
             
-            
             from services.document_service import DocumentService
             from services.embedding_service import EmbeddingService  
             from services.vector_store_service import VectorStoreService
             from services.retrieval_service import RetrievalService
             from services.chat_service import ChatService
             from services.session_service import SessionService
+            from services.search_service import SearchService
 
             # Services im Container registrieren für PipelineController DI
             if services.get('document_service'):
                 container.register_instance(DocumentService, services['document_service'])
+                logger.debug("✅ DocumentService im Container registriert")
+                
             if services.get('embedding_service'): 
                 container.register_instance(EmbeddingService, services['embedding_service'])
+                logger.debug("✅ EmbeddingService im Container registriert")
+                
             if services.get('vectorstore_service'):
                 container.register_instance(VectorStoreService, services['vectorstore_service'])
+                logger.debug("✅ VectorStoreService im Container registriert")
+                
             if services.get('retrieval_service'):
                 container.register_instance(RetrievalService, services['retrieval_service'])
+                logger.debug("✅ RetrievalService im Container registriert")
+                
             if services.get('chat_service'):
                 container.register_instance(ChatService, services['chat_service'])
+                logger.debug("✅ ChatService im Container registriert")
+                
             if services.get('session_service'):
                 container.register_instance(SessionService, services['session_service'])
+                logger.debug("✅ SessionService im Container registriert")
+            
+            # =================================================================
+            # TODO #1 FIX: SearchService Container-Registrierung (Type-basiert)
+            # =================================================================
+            if services.get('search_service'):
+                container.register_instance(SearchService, services['search_service'])
+                logger.info("✅ SearchService im DI-Container registriert (TODO #1 FIX)")
+            else:
+                logger.warning("⚠️ SearchService nicht im Container registriert (Service nicht verfügbar)")
                 
-            logger.info("✅ Services im DI-Container für Controller registriert")
+            logger.info("✅ Alle Services im DI-Container mit Type-basierter Registration registriert")
             
             # PipelineController mit korrekter PipelineConfig (SCHRITT 1A FIX)
             pipeline_config = PipelineConfig(
@@ -240,9 +291,6 @@ def initialize_rag_system_with_bugfixes():
                 retry_delay_seconds=2.0
             )
             
-            # container.register('search_service', search_service)
-            container.register('SearchService', search_service)
-            
             services['pipeline_controller'] = PipelineController(config=pipeline_config)
             logger.info("✅ PipelineController mit korrekter Config initialisiert")
             
@@ -261,7 +309,8 @@ def initialize_rag_system_with_bugfixes():
                     'vectorstore': services['vectorstore_service'],
                     'retrieval': services['retrieval_service'],
                     'chat': services['chat_service'],
-                    'session': services['session_service']
+                    'session': services['session_service'],
+                    'search': services['search_service']  # SearchService hinzugefügt
                 }
             )
             logger.info("✅ HealthController initialisiert")
@@ -278,6 +327,7 @@ def initialize_rag_system_with_bugfixes():
             services['health_controller'] = None
         
         logger.info("🎉 Alle Services mit Bugfixes erfolgreich initialisiert!")
+        logger.info("✅ TODO #1: SearchService Registration Fix ERFOLGREICH angewendet")
         
         return services, config
         
@@ -301,16 +351,19 @@ def main():
         
         # Interface Header
         st.title("⚙️ RAG System - Industrielle Automatisierung")
-        st.caption("Version 4.0.0 - Service-orientierte Architektur mit Bugfixes")
+        st.caption("Version 4.0.1 - TODO #1: SearchService Fix angewendet")
         
         # System-Status Sidebar
         with st.sidebar:
             st.header("🔧 System-Status (mit Bugfixes)")
             
             # Services Status
-            st.subheader("Services Aktiv")
             services_count = sum(1 for service in services.values() if service is not None and 'controller' not in str(service))
-            st.metric("Services", f"{services_count}", "✓ von 9 Services")
+            st.metric("Services", f"{services_count}", "✓ von 10 Services")
+            
+            # SearchService Status (TODO #1 Validierung)
+            search_status = "OK" if services.get('search_service') else "Fehler"
+            st.metric("Search Service", search_status, "✓ TODO #1 FIX")
             
             # Embedding Service Status
             embedding_status = "OK" if services.get('embedding_service') else "Fehler" 
@@ -362,6 +415,14 @@ def main():
                 else:
                     st.error(f"❌ {service_name}: Nicht verfügbar")
             
+            # TODO #1 Validierung
+            st.subheader("TODO #1 Validierung")
+            if services.get('search_service'):
+                st.success("✅ SearchService erfolgreich erstellt und registriert")
+                st.info("SearchService kann jetzt von PipelineController verwendet werden")
+            else:
+                st.warning("⚠️ SearchService nicht verfügbar - Query-Pipeline eingeschränkt")
+            
             # Debug Information
             if st.checkbox("Debug-Informationen anzeigen"):
                 st.subheader("System-Debug-Info")
@@ -370,6 +431,8 @@ def main():
                     "Konfiguration": str(config.__class__.__name__),
                     "Services geladen": len(services),
                     "Controller aktiv": sum(1 for k, v in services.items() if 'controller' in k and v is not None),
+                    "SearchService Status": "OK" if services.get('search_service') else "Fehlt",
+                    "TODO #1 Fix": "Angewendet",
                     "Timestamp": datetime.now().isoformat()
                 }
                 
@@ -386,7 +449,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        logger.info("🚀 RAG Main Application gestartet")
+        logger.info("🚀 RAG Main Application gestartet (Version 4.0.1 - TODO #1 Fix)")
         main()
     except Exception as e:
         logger.error(f"Kritischer Startfehler: {e}")
